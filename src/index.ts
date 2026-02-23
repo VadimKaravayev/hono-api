@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { serve } from '@hono/node-server';
-import postsRoute from './routes/posts.js';
+import postsRoute from './routes/posts';
 
 const app = new Hono();
 
@@ -9,13 +8,15 @@ const app = new Hono();
 // In production you'd restrict this to your frontend's domain.
 app.use('*', cors());
 
-app.get('/', (c) => c.json({ status: 'ok' }));
+app.get('/', async (_c) => {
+  const file = Bun.file(new URL('./views/index.html', import.meta.url));
+  return new Response(file);
+});
 
 app.route('/posts', postsRoute);
 
 // Railway injects PORT automatically — fallback to 3000 for local dev.
 const port = Number(process.env.PORT ?? 3000);
 
-serve({ fetch: app.fetch, port }, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+Bun.serve({ fetch: app.fetch, port });
+console.log(`Server running on http://localhost:${port}`);
